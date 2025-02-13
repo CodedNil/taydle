@@ -73,7 +73,7 @@ input[type="text"] {
     font-size: 16px;
     background-color: #333;
     color: white;
-    width: 400px;
+    min-width: 400px;
     border: 1px solid #555;
     border-radius: 40px;
     margin: 10px auto;
@@ -83,6 +83,7 @@ input[type="text"][readonly] {
     border: none;
     font-weight: bold;
     cursor: not-allowed;
+    text-align: center;
 }
 
 .suggest-dropdown {

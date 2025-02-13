@@ -1,23 +1,11 @@
-Rapid falloff for score, getting within first few seconds should give vastly more score than 20 seconds
-If you guess within 4 seconds you should get 100%
-Incorrect guesses should harm points
-Display current point potential instead of total time
-
 Clean up UI:
 Show the orange bar on the playback bar when you half guess, and the green one for a full guess
 Show little red lines on the bar for when false guesses are made
 Colour the play/pause button when it changes, with transition
 Clean up instructions
-Hide the inputs for parts you guess correctly, have text there saying "Album: Midnights" etc instead
 
 Don't let them refresh the page to reset timer, store total time in localstorage, add a reset button too which starts from the beginning but doesn't refresh the time, display the total time read-out
 
-Fancy share ASCII, a progress bar with yellow and green based on how long it took to get each half
-
-Taydle #1 78/100 Points
-🟧🟧🟥🟦🟧🟩⬛⬛⬛⬛
-Incorrect Guesses: 1
-Total Time: 45 seconds
-Got Album In: 34 seconds
-
 Average Points Over 18 Games 64/100
+
+Copy to clipboard the output

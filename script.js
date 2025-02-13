@@ -1,8 +1,12 @@
 let audio;
+let allSongs = [];
 let isPlaying = false;
 let currentSong = null;
 let totalTime = Number(localStorage.getItem("totalTime") || 0); // Load total time from localStorage if available
-let allSongs = [];
+let songGuessData;
+let albumGuessData;
+let eventsData = [];
+let incorrectGuesses = 0;
 
 // Load the JSON file and initialize the song list
 fetch("index.json")
@@ -19,6 +23,10 @@ fetch("index.json")
 function pickRandomSong() {
     currentSong = allSongs[Math.floor(Math.random() * allSongs.length)];
     totalTime = 0;
+    incorrectGuesses = 0;
+    songGuessData = null;
+    albumGuessData = null;
+    eventsData = [];
     const [album, song] = currentSong;
 
     const albumName = album.split(" - ")[1];
@@ -84,7 +92,9 @@ function updateProgress() {
     }
     lastTime = now;
     localStorage.setItem("totalTime", totalTime); // Store totalTime in localStorage
-    document.querySelector(".time-text").textContent = `Total time: ${Math.round(totalTime)} seconds`;
+    document.querySelector(".time-text").innerHTML = `Total Time: ${Math.round(
+        totalTime
+    )} seconds<br>Incorrect Guesses: ${incorrectGuesses}`;
 }
 
 // Event listeners
@@ -133,13 +143,14 @@ function showSuggestions(input, song, suggestions, query) {
     });
 }
 
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
 function submitGuess() {
     pause();
     const song_guess = document.getElementById("guessSongInput").value.toLowerCase().trim();
     const album_guess = document.getElementById("guessAlbumInput").value.toLowerCase().trim();
 
-    let score = 0;
-    let message = "";
+    let message = "Sorry that's not it!";
 
     // Evaluate guess correctness
     const album = currentSong[0].split(" - ")[1];
@@ -147,27 +158,103 @@ function submitGuess() {
     const albumCorrect = album.toLowerCase() === album_guess;
     const songCorrect = song.toLowerCase() === song_guess;
 
-    if (songCorrect) {
+    if (songCorrect && !songGuessData && albumCorrect && !albumGuessData) {
+        message = `Well done!`;
+        songGuessData = {
+            name: song_guess,
+            time: totalTime,
+        };
         document.getElementById("guessSongInput").setAttribute("readonly", true);
-    }
-    if (albumCorrect) {
+        document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
+        albumGuessData = {
+            name: album_guess,
+            time: totalTime,
+        };
         document.getElementById("guessAlbumInput").setAttribute("readonly", true);
+        document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
+        eventsData.push("Complete");
+    } else if (songCorrect && !songGuessData) {
+        message = `Correct song, what's the album?.`;
+        songGuessData = {
+            name: song_guess,
+            time: totalTime,
+        };
+        document.getElementById("guessSongInput").setAttribute("readonly", true);
+        document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
+        eventsData.push("Song");
+    } else if (albumCorrect && !albumGuessData) {
+        message = `Correct album, what's the song?`;
+        albumGuessData = {
+            name: album_guess,
+            time: totalTime,
+        };
+        document.getElementById("guessAlbumInput").setAttribute("readonly", true);
+        document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
+        eventsData.push("Album");
+    }
+    if (!songCorrect && !albumCorrect) {
+        incorrectGuesses++;
+        eventsData.push("Incorrect");
     }
 
-    if (!albumCorrect && !songCorrect) {
-        message = "Sorry, but you didn't guess the album or song correctly.";
-    } else if (!albumCorrect) {
-        message = `Correct song, what's the album?.`;
-    } else if (!songCorrect) {
-        message = `Correct album, what's the song?`;
-    } else {
-        // Evaluate how long it took to guess
-        const progress = 100 - (audio.currentTime / audio.duration) * 100;
-        score = Math.round(progress);
-        message = `<strong>Score:</strong> ${score}<br>\nGreat job! You guessed both the album and song correctly!<br>You listened to ${Math.round(
-            audio.currentTime
-        )} seconds of the song before guessing!`;
+    if (songGuessData && albumGuessData) {
+        // Calculate score based on how long it took to guess
+        const max_time = 120; // Anything past this is 0 score
+        const buffer_time = 2; // How long to allow score to be max before it starts dropping
+        const falloff_rate = 0.6; // How fast the score drops off logarithmically, lower is faster falloff
+        const albumScore =
+            clamp(
+                100 -
+                    (100 / (max_time - buffer_time) ** falloff_rate) *
+                        (albumGuessData.time - buffer_time) ** falloff_rate || 100,
+                0,
+                100
+            ) / 2;
+        const songScore =
+            clamp(
+                100 -
+                    (100 / (max_time - buffer_time) ** falloff_rate) *
+                        (songGuessData.time - buffer_time) ** falloff_rate || 100,
+                0,
+                100
+            ) / 2;
+        const incorrectScore = incorrectGuesses * 10;
+        const totalScore = clamp(albumScore + songScore - incorrectScore, 0, 100);
+
+        // Get the emojis line
+        let emojiLine = "";
+        let encounteredCorrect = false;
+        eventsData.forEach((event, index) => {
+            if (event === "Incorrect") {
+                emojiLine += "🟥";
+            } else if (event === "Complete") {
+                emojiLine += "🟩";
+                encounteredCorrect = true;
+            } else if (event === "Album" || event === "Song") {
+                if (!encounteredCorrect) {
+                    emojiLine += "🟦";
+                    encounteredCorrect = true;
+                } else {
+                    emojiLine += "🟩";
+                }
+            }
+        });
+
+        const messageLines = [
+            `Taydle #1 ${Math.round(totalScore)}/100 Points`,
+            emojiLine,
+            `Incorrect Guesses: ${incorrectGuesses}`,
+            `Got Album In: ${Math.round(albumGuessData.time)} seconds`,
+            `Got Song In: ${Math.round(songGuessData.time)} seconds`,
+            `Total Time: ${Math.round(Math.max(albumGuessData.time, songGuessData.time))} seconds`,
+        ];
+
+        message = messageLines.join("<br>");
+
+        // Hide guess button
+        document.getElementById("guessButton").style.display = "none";
     }
 
     document.getElementById("score").innerHTML = message;
+    updateProgress();
 }
