@@ -4,6 +4,7 @@ import hashlib
 
 albums_folder = "albums"
 output_file = "index.json"
+salt = "salty1"
 
 songs_list = []
 
@@ -17,7 +18,9 @@ for album_folder in sorted(os.listdir(albums_folder)):
                 songs_list.append(f"{album_folder}|{song_file}")
 
 # Shuffle the list of songs
-songs_list.sort(key=lambda song: hashlib.sha256(song.encode("utf-8")).hexdigest())
+songs_list.sort(
+    key=lambda song: hashlib.sha256(f"{song}|{salt}".encode("utf-8")).hexdigest()
+)
 
 # Write the dictionary to a json file
 with open(output_file, "w", encoding="utf-8") as json_file:

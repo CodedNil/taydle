@@ -109,7 +109,17 @@ input[type="text"][readonly] {
     background-color: #555;
 }
 
+#message {
+    margin-top: 20px;
+    font-size: 18px;
+}
+
 #score {
     margin-top: 20px;
     font-size: 18px;
+    background-color: #356237;
+    padding: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: none;
 }

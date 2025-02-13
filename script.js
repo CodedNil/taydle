@@ -6,6 +6,7 @@ let totalTime = Number(localStorage.getItem("totalTime") || 0); // Load total ti
 let songGuessData;
 let albumGuessData;
 let eventsData = [];
+let messageLines = []; // The Final score
 let incorrectGuesses = 0;
 
 // Load the JSON file and initialize the song list
@@ -27,6 +28,9 @@ function pickRandomSong() {
     songGuessData = null;
     albumGuessData = null;
     eventsData = [];
+    messageLines = [];
+    document.getElementById("score").display = "none";
+    document.getElementById("message").textContent = "";
     const [album, song] = currentSong;
 
     const albumName = album.split(" - ")[1];
@@ -150,8 +154,6 @@ function submitGuess() {
     const song_guess = document.getElementById("guessSongInput").value.toLowerCase().trim();
     const album_guess = document.getElementById("guessAlbumInput").value.toLowerCase().trim();
 
-    let message = "Sorry that's not it!";
-
     // Evaluate guess correctness
     const album = currentSong[0].split(" - ")[1];
     const song = cleanSong(currentSong[1]);
@@ -159,7 +161,6 @@ function submitGuess() {
     const songCorrect = song.toLowerCase() === song_guess;
 
     if (songCorrect && !songGuessData && albumCorrect && !albumGuessData) {
-        message = `Well done!`;
         songGuessData = {
             name: song_guess,
             time: totalTime,
@@ -173,8 +174,9 @@ function submitGuess() {
         document.getElementById("guessAlbumInput").setAttribute("readonly", true);
         document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
         eventsData.push("Complete");
+        document.getElementById("message").innerHTML = "Well done!";
+        updateProgress();
     } else if (songCorrect && !songGuessData) {
-        message = `Correct song, what's the album?.`;
         songGuessData = {
             name: song_guess,
             time: totalTime,
@@ -182,8 +184,9 @@ function submitGuess() {
         document.getElementById("guessSongInput").setAttribute("readonly", true);
         document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
         eventsData.push("Song");
+        document.getElementById("message").innerHTML = "Correct song, what's the album?";
+        updateProgress();
     } else if (albumCorrect && !albumGuessData) {
-        message = `Correct album, what's the song?`;
         albumGuessData = {
             name: album_guess,
             time: totalTime,
@@ -191,10 +194,14 @@ function submitGuess() {
         document.getElementById("guessAlbumInput").setAttribute("readonly", true);
         document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
         eventsData.push("Album");
+        document.getElementById("message").innerHTML = "Correct album, what's the song?";
+        updateProgress();
     }
     if (!songCorrect && !albumCorrect) {
         incorrectGuesses++;
         eventsData.push("Incorrect");
+        document.getElementById("message").innerHTML = "Sorry that's not it!";
+        updateProgress();
     }
 
     if (songGuessData && albumGuessData) {
@@ -219,7 +226,7 @@ function submitGuess() {
                 100
             ) / 2;
         const incorrectScore = incorrectGuesses * 10;
-        const totalScore = clamp(albumScore + songScore - incorrectScore, 0, 100);
+        const totalScore = Math.round(clamp(albumScore + songScore - incorrectScore, 0, 100));
 
         // Get the emojis line
         let emojiLine = "";
@@ -240,21 +247,41 @@ function submitGuess() {
             }
         });
 
-        const messageLines = [
-            `Taydle #1 ${Math.round(totalScore)}/100 Points`,
+        // Retrieve past scores from localStorage, add new score, then save it
+        const pastScores = JSON.parse(localStorage.getItem("pastScores")) || [];
+        pastScores.push(totalScore);
+        localStorage.setItem("pastScores", JSON.stringify(pastScores));
+
+        // Calculate average score
+        const totalGames = pastScores.length;
+        const averageScore = pastScores.reduce((acc, score) => acc + score, 0) / totalGames;
+
+        messageLines = [
+            `Taydle #1 ${totalScore}/100 Points`,
             emojiLine,
             `Incorrect Guesses: ${incorrectGuesses}`,
             `Got Album In: ${Math.round(albumGuessData.time)} seconds`,
             `Got Song In: ${Math.round(songGuessData.time)} seconds`,
-            `Total Time: ${Math.round(Math.max(albumGuessData.time, songGuessData.time))} seconds`,
+            `Average Points Over ${totalGames} Games: ${Math.round(averageScore)}/100`,
         ];
-
-        message = messageLines.join("<br>");
+        document.getElementById("message").innerHTML = "";
+        document.getElementById("score").innerHTML = "Click To Copy To Clipboard<br><br>" + messageLines.join("<br>");
+        document.getElementById("score").style.display = "block";
+        updateProgress();
 
         // Hide guess button
         document.getElementById("guessButton").style.display = "none";
     }
+}
 
-    document.getElementById("score").innerHTML = message;
-    updateProgress();
+// Add click event listener to copy the message
+function copyScore() {
+    navigator.clipboard.writeText(messageLines.join("\n")).then(
+        function () {
+            console.log("Async: Copying to clipboard was successful!");
+        },
+        function (err) {
+            console.error("Async: Could not copy text: ", err);
+        }
+    );
 }

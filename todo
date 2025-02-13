@@ -4,8 +4,5 @@ Show little red lines on the bar for when false guesses are made
 Colour the play/pause button when it changes, with transition
 Clean up instructions
 
+True daily picks, based on date
 Don't let them refresh the page to reset timer, store total time in localstorage, add a reset button too which starts from the beginning but doesn't refresh the time, display the total time read-out
-
-Average Points Over 18 Games 64/100
-
-Copy to clipboard the output
