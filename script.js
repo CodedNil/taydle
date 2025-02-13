@@ -67,14 +67,16 @@ function togglePlayPause() {
 
 function play() {
     audio.play();
-    document.getElementById("playButton").textContent = "Pause";
+    document.getElementById("playButton").textContent = "Playing";
+    document.getElementById("playButton").style.backgroundColor = "#4caf50";
     isPlaying = true;
     updateProgress();
 }
 
 function pause() {
     audio.pause();
-    document.getElementById("playButton").textContent = "Play";
+    document.getElementById("playButton").textContent = "Paused";
+    document.getElementById("playButton").style.backgroundColor = "#8f5a03";
     isPlaying = false;
     updateProgress();
 }
@@ -84,12 +86,18 @@ function restartSong() {
     updateProgress();
 }
 
+// Logarithmic progress bar, to highlight the first seconds more prominently
+function progressFalloff(now, dur) {
+    const falloff_rate = 0.5;
+    return clamp(((1 / dur ** falloff_rate) * now ** falloff_rate || 0) * 100, 0, 100);
+}
+
 let lastTime = 0;
 function updateProgress() {
     const now = audio.currentTime;
-    const progress = (now / audio.duration) * 100;
-    document.querySelector(".progress-bar").style.width = `${progress}%`;
-    document.querySelector(".progress-text").textContent = `${Math.round(now)} / ${Math.round(audio.duration)} seconds`;
+    const dur = audio.duration;
+    document.querySelector(".progress-bar").style.width = `${progressFalloff(now, dur)}%`;
+    document.querySelector(".progress-text").textContent = `${Math.round(now)} / ${Math.round(dur)} seconds`;
 
     if (now - lastTime > 0) {
         totalTime += now - lastTime; // Increment totalTime
@@ -149,6 +157,23 @@ function showSuggestions(input, song, suggestions, query) {
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 
+function addGuessMarker(now, type) {
+    // Create a marker element
+    const marker = document.createElement("div");
+    marker.classList.add("marker");
+    marker.style.left = `${progressFalloff(now, audio.duration)}%`;
+    if (type == "incorrect") {
+        marker.style.backgroundColor = "red";
+    } else if (type == "correct") {
+        marker.style.backgroundColor = "rgb(0 255 0)";
+        marker.style.height = "100%";
+        marker.style.top = "0";
+    }
+
+    // Append marker to the progress bar
+    document.querySelector(".progress-container").appendChild(marker);
+}
+
 function submitGuess() {
     pause();
     const song_guess = document.getElementById("guessSongInput").value.toLowerCase().trim();
@@ -160,51 +185,38 @@ function submitGuess() {
     const albumCorrect = album.toLowerCase() === album_guess;
     const songCorrect = song.toLowerCase() === song_guess;
 
-    if (songCorrect && !songGuessData && albumCorrect && !albumGuessData) {
+    if (songCorrect && !songGuessData) {
         songGuessData = {
             name: song_guess,
             time: totalTime,
         };
         document.getElementById("guessSongInput").setAttribute("readonly", true);
         document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
-        albumGuessData = {
-            name: album_guess,
-            time: totalTime,
-        };
-        document.getElementById("guessAlbumInput").setAttribute("readonly", true);
-        document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
-        eventsData.push("Complete");
-        document.getElementById("message").innerHTML = "Well done!";
-        updateProgress();
-    } else if (songCorrect && !songGuessData) {
-        songGuessData = {
-            name: song_guess,
-            time: totalTime,
-        };
-        document.getElementById("guessSongInput").setAttribute("readonly", true);
-        document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
-        eventsData.push("Song");
+        addGuessMarker(audio.currentTime, "correct"); // Add marker for the guess
         document.getElementById("message").innerHTML = "Correct song, what's the album?";
         updateProgress();
-    } else if (albumCorrect && !albumGuessData) {
+    }
+    if (albumCorrect && !albumGuessData) {
         albumGuessData = {
             name: album_guess,
             time: totalTime,
         };
         document.getElementById("guessAlbumInput").setAttribute("readonly", true);
         document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
-        eventsData.push("Album");
+        addGuessMarker(audio.currentTime, "correct"); // Add marker for the guess
         document.getElementById("message").innerHTML = "Correct album, what's the song?";
         updateProgress();
     }
     if (!songCorrect && !albumCorrect) {
         incorrectGuesses++;
         eventsData.push("Incorrect");
+        addGuessMarker(audio.currentTime, "incorrect"); // Add marker for the guess
         document.getElementById("message").innerHTML = "Sorry that's not it!";
         updateProgress();
     }
 
     if (songGuessData && albumGuessData) {
+        eventsData.push("Complete");
         // Calculate score based on how long it took to guess
         const max_time = 120; // Anything past this is 0 score
         const buffer_time = 2; // How long to allow score to be max before it starts dropping
@@ -263,6 +275,7 @@ function submitGuess() {
             `Got Album In: ${Math.round(albumGuessData.time)} seconds`,
             `Got Song In: ${Math.round(songGuessData.time)} seconds`,
             `Average Points Over ${totalGames} Games: ${Math.round(averageScore)}/100`,
+            `https://taydle.codenil.dev`,
         ];
         document.getElementById("message").innerHTML = "";
         document.getElementById("score").innerHTML = "Click To Copy To Clipboard<br><br>" + messageLines.join("<br>");
@@ -271,6 +284,10 @@ function submitGuess() {
 
         // Hide guess button
         document.getElementById("guessButton").style.display = "none";
+    } else if (songCorrect && !songGuessData) {
+        eventsData.push("Song");
+    } else if (albumCorrect && !albumGuessData) {
+        eventsData.push("Album");
     }
 }
 

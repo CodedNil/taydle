@@ -25,14 +25,22 @@ body {
 .progress-bar {
     width: 0%;
     height: 100%;
-    background-color: #4caf50;
-    transition: width 0.1s linear;
+    background-color: #119fbb;
+    transition: width 0.5s linear;
 }
 .progress-text {
     position: absolute;
     width: 100%;
     text-align: center;
     line-height: 20px;
+}
+.marker {
+    position: absolute;
+    width: 6px;
+    height: 80%;
+    border-radius: 10px;
+    top: 10%;
+    transform: translateX(-50%);
 }
 
 .button {
@@ -59,7 +67,7 @@ body {
 }
 
 #playButton {
-    background-color: #4caf50;
+    background-color: #8f5a03;
 }
 #restartButton {
     background-color: #b3483c;
