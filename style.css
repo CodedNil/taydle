@@ -1,0 +1,114 @@
+body {
+    background-color: #121212;
+    color: white;
+    font-family: "Arial", sans-serif;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.progress-container {
+    position: relative;
+    width: 100%;
+    margin: 20px 0;
+    background-color: #424242;
+    border-radius: 40px;
+    overflow: hidden;
+    height: 20px;
+}
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #4caf50;
+    transition: width 0.1s linear;
+}
+.progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    line-height: 20px;
+}
+
+.button {
+    border-radius: 100px;
+    box-shadow: rgba(0, 0, 0, 0.2) 0 3px 5px -1px, rgba(0, 0, 0, 0.14) 0 6px 10px 0, rgba(0, 0, 0, 0.12) 0 1px 18px 0;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 250ms;
+    border: 0;
+    font-size: 16px;
+    font-weight: bold;
+    user-select: none;
+    touch-action: manipulation;
+}
+.button:hover {
+    box-shadow: rgba(60, 64, 67, 0.3) 0 2px 3px 0, rgba(60, 64, 67, 0.15) 0 6px 10px 4px;
+    transform: scale(1.05) rotate(-1deg);
+    font-weight: bolder;
+}
+
+#playButton {
+    background-color: #4caf50;
+}
+#restartButton {
+    background-color: #b3483c;
+}
+#guessButton {
+    background-color: #119fbb;
+}
+
+input[type="text"] {
+    padding: 10px;
+    font-size: 16px;
+    background-color: #333;
+    color: white;
+    width: 400px;
+    border: 1px solid #555;
+    border-radius: 40px;
+    margin: 10px auto;
+}
+input[type="text"][readonly] {
+    background-color: transparent;
+    border: none;
+    font-weight: bold;
+    cursor: not-allowed;
+}
+
+.suggest-dropdown {
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 20px;
+    max-height: 250px;
+    overflow-y: auto;
+    position: absolute;
+    width: 400px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    margin-top: 5px;
+    display: none;
+}
+.suggest-dropdown div {
+    padding: 10px;
+    cursor: pointer;
+    color: #eeeeee;
+}
+.suggest-dropdown div:hover {
+    background-color: #555;
+}
+
+#score {
+    margin-top: 20px;
+    font-size: 18px;
+}

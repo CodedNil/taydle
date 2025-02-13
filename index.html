@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Taydle</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>Today's Song: Click to Play</h1>
+            <h4>
+                Guess the song and album as quickly as possible.<br />Pause when you are ready to guess to save the
+                time, if you are unsure about both song and album, you can guess only one at a time and still get points
+                for partially correct. Then later guess the other half to end.
+            </h4>
+            <div class="progress-container">
+                <div class="progress-text"></div>
+                <div class="progress-bar"></div>
+            </div>
+            <div>
+                <div class="time-text">Total time: 0 seconds</div>
+                <button id="playButton" class="button">Play</button>
+                <button id="restartButton" class="button">Restart Song</button>
+            </div>
+
+            <input type="text" id="guessSongInput" placeholder="Guess the song..." />
+            <input type="text" id="guessAlbumInput" placeholder="Guess the album..." />
+            <div id="suggestions" class="suggest-dropdown"></div>
+
+            <div><button onclick="submitGuess()" id="guessButton" class="button">Guess</button></div>
+
+            <p id="score"></p>
+        </div>
+        <script src="script.js"></script>
+    </body>
+</html>
