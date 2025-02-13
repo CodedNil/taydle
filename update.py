@@ -4,7 +4,7 @@ import hashlib
 
 albums_folder = "albums"
 output_file = "index.json"
-salt = "salty1"
+salt = "salt0"
 
 songs_list = []
 
@@ -15,7 +15,7 @@ for album_folder in sorted(os.listdir(albums_folder)):
         # Iterate through each song file in the album folder
         for song_file in sorted(os.listdir(album_path)):
             if song_file.endswith(".mp3"):
-                songs_list.append(f"{album_folder}|{song_file}")
+                songs_list.append(f"{hashlib.sha256(song_file.encode("utf-8")).hexdigest()}|{album_folder}|{song_file}")
 
 # Shuffle the list of songs
 songs_list.sort(

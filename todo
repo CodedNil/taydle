@@ -1,4 +1,0 @@
-Clean up instructions
-
-True daily picks, based on date
-Don't let them refresh the page to reset timer, store total time in localstorage, add a reset button too which starts from the beginning but doesn't refresh the time, display the total time read-out

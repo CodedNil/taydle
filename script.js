@@ -2,42 +2,65 @@ let audio;
 let allSongs = [];
 let isPlaying = false;
 let currentSong = null;
+let gameNumber = 0;
 let totalTime = Number(localStorage.getItem("totalTime") || 0); // Load total time from localStorage if available
 let songGuessData;
 let albumGuessData;
 let eventsData = [];
 let messageLines = []; // The Final score
-let incorrectGuesses = 0;
+let incorrectGuesses = Number(localStorage.getItem("incorrectGuesses") || 0);
 
-// Load the JSON file and initialize the song list
-fetch("index.json")
-    .then((response) => response.json())
-    .then((data) => {
-        data.forEach((entry) => {
-            const [album, song] = entry.split("|");
-            allSongs.push([album, song]);
-        });
-        pickRandomSong();
-    })
-    .catch((error) => console.error("Error loading song index:", error));
+// Function to format the current date to a string
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+const todayStr = formatDate(new Date());
 
-function pickRandomSong() {
-    currentSong = allSongs[Math.floor(Math.random() * allSongs.length)];
-    totalTime = 0;
-    incorrectGuesses = 0;
-    songGuessData = null;
-    albumGuessData = null;
-    eventsData = [];
-    messageLines = [];
-    document.getElementById("score").display = "none";
-    document.getElementById("message").textContent = "";
-    const [album, song] = currentSong;
+// Check and update game state only if the date has changed
+function initializeGame() {
+    if (localStorage.getItem("lastGameDate") === todayStr) {
+        const lastState = localStorage.getItem("lastGameState");
+        if (lastState) {
+            const lastScore = JSON.parse(lastState);
+            document.getElementById("score").innerHTML = "Click To Copy To Clipboard<br><br>" + lastScore.join("<br>");
+            document.getElementById("score").style.display = "block";
+        }
+    } else {
+        resetData();
+    }
 
-    const albumName = album.split(" - ")[1];
-    const songName = cleanSong(song);
+    // Load songs and pick based on new date if it's a new day
+    fetch("index.json")
+        .then((response) => response.json())
+        .then((data) => {
+            allSongs = data.map((entry) => entry.split("|"));
+            pickSong();
+            document.querySelector("h1").textContent = `Taydle #${gameNumber}: Click To Play`;
+        })
+        .catch((error) => console.error("Error loading song index:", error));
+}
+
+function pickSong() {
+    const startDate = new Date("2025-02-14");
+    const today = new Date();
+    localStorage.setItem("lastGameDate", todayStr);
+
+    // Calculate number of days between today and start date
+    const diffTime = today - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    gameNumber = diffDays + 1;
+
+    // Compute index for the song based on the day count seen modulo the array length
+    const index = (diffDays + allSongs.length) % allSongs.length;
+    currentSong = allSongs[index];
+
+    // Display song details as part of game setup
+    const [hash, album, song] = currentSong;
 
     audio = new Audio(`albums/${album}/${song}`);
-    document.querySelector("h1").textContent = `${songName} - ${albumName}`;
     audio.addEventListener("timeupdate", function () {
         if (audio.paused || audio.ended) return;
         updateProgress();
@@ -45,6 +68,20 @@ function pickRandomSong() {
     audio.addEventListener("durationchange", function () {
         updateProgress();
     });
+}
+
+function resetData() {
+    // Reset game state related variables
+    totalTime = 0;
+    localStorage.setItem("totalTime", totalTime);
+    incorrectGuesses = 0;
+    localStorage.setItem("incorrectGuesses", incorrectGuesses);
+    songGuessData = null;
+    albumGuessData = null;
+    eventsData = [];
+    messageLines = [];
+    document.getElementById("score").display = "none";
+    document.getElementById("message").textContent = "";
 }
 
 function cleanSong(song) {
@@ -117,13 +154,13 @@ document.getElementById("restartButton").addEventListener("click", restartSong);
 document.getElementById("guessSongInput").addEventListener("input", function () {
     pause();
     const query = this.value.toLowerCase();
-    const suggestions = allSongs.filter((data) => cleanSong(data[1]).toLowerCase().includes(query));
+    const suggestions = allSongs.filter((data) => cleanSong(data[2]).toLowerCase().includes(query));
     showSuggestions(document.getElementById("guessSongInput"), true, suggestions, query);
 });
 document.getElementById("guessAlbumInput").addEventListener("input", function () {
     pause();
     const query = this.value.toLowerCase();
-    const suggestions = allSongs.filter((data) => data[0].toLowerCase().includes(query));
+    const suggestions = allSongs.filter((data) => data[1].toLowerCase().includes(query));
     showSuggestions(document.getElementById("guessAlbumInput"), false, suggestions, query);
 });
 
@@ -140,7 +177,7 @@ function showSuggestions(input, song, suggestions, query) {
 
     const seenNames = {};
     suggestions.forEach((suggestion) => {
-        const name = cleanSong(suggestion[song ? 1 : 0]);
+        const name = cleanSong(suggestion[song ? 2 : 1]);
         if (!seenNames.hasOwnProperty(name)) {
             seenNames[name] = true;
 
@@ -180,16 +217,13 @@ function submitGuess() {
     const album_guess = document.getElementById("guessAlbumInput").value.toLowerCase().trim();
 
     // Evaluate guess correctness
-    const album = currentSong[0].split(" - ")[1];
-    const song = cleanSong(currentSong[1]);
+    const album = currentSong[1].split(" - ")[1];
+    const song = cleanSong(currentSong[2]);
     const albumCorrect = album.toLowerCase() === album_guess;
     const songCorrect = song.toLowerCase() === song_guess;
 
     if (songCorrect && !songGuessData) {
-        songGuessData = {
-            name: song_guess,
-            time: totalTime,
-        };
+        songGuessData = totalTime;
         document.getElementById("guessSongInput").setAttribute("readonly", true);
         document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
         addGuessMarker(audio.currentTime, "correct"); // Add marker for the guess
@@ -197,10 +231,7 @@ function submitGuess() {
         updateProgress();
     }
     if (albumCorrect && !albumGuessData) {
-        albumGuessData = {
-            name: album_guess,
-            time: totalTime,
-        };
+        albumGuessData = totalTime;
         document.getElementById("guessAlbumInput").setAttribute("readonly", true);
         document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
         addGuessMarker(audio.currentTime, "correct"); // Add marker for the guess
@@ -209,13 +240,14 @@ function submitGuess() {
     }
     if (!songCorrect && !albumCorrect) {
         incorrectGuesses++;
+        localStorage.setItem("incorrectGuesses", incorrectGuesses);
         eventsData.push("Incorrect");
         addGuessMarker(audio.currentTime, "incorrect"); // Add marker for the guess
         document.getElementById("message").innerHTML = "Sorry that's not it!";
         updateProgress();
     }
 
-    if (songGuessData && albumGuessData) {
+    if (songGuessData != null && albumGuessData != null) {
         eventsData.push("Complete");
         // Calculate score based on how long it took to guess
         const max_time = 120; // Anything past this is 0 score
@@ -224,16 +256,16 @@ function submitGuess() {
         const albumScore =
             clamp(
                 100 -
-                    (100 / (max_time - buffer_time) ** falloff_rate) *
-                        (albumGuessData.time - buffer_time) ** falloff_rate || 100,
+                    (100 / (max_time - buffer_time) ** falloff_rate) * (albumGuessData - buffer_time) ** falloff_rate ||
+                    100,
                 0,
                 100
             ) / 2;
         const songScore =
             clamp(
                 100 -
-                    (100 / (max_time - buffer_time) ** falloff_rate) *
-                        (songGuessData.time - buffer_time) ** falloff_rate || 100,
+                    (100 / (max_time - buffer_time) ** falloff_rate) * (songGuessData - buffer_time) ** falloff_rate ||
+                    100,
                 0,
                 100
             ) / 2;
@@ -261,19 +293,20 @@ function submitGuess() {
 
         // Retrieve past scores from localStorage, add new score, then save it
         const pastScores = JSON.parse(localStorage.getItem("pastScores")) || [];
-        pastScores.push(totalScore);
+        const hash = currentSong[0];
+        pastScores.push(hash + "|" + totalScore);
         localStorage.setItem("pastScores", JSON.stringify(pastScores));
 
         // Calculate average score
         const totalGames = pastScores.length;
-        const averageScore = pastScores.reduce((acc, score) => acc + score, 0) / totalGames;
+        const averageScore = pastScores.reduce((acc, score) => acc + parseFloat(score.split("|")[1]), 0) / totalGames;
 
         messageLines = [
-            `Taydle #1 ${totalScore}/100 Points`,
+            `Taydle #${gameNumber} ${totalScore}/100 Points`,
             emojiLine,
             `Incorrect Guesses: ${incorrectGuesses}`,
-            `Got Album In: ${Math.round(albumGuessData.time)} seconds`,
-            `Got Song In: ${Math.round(songGuessData.time)} seconds`,
+            `Got Album In: ${Math.round(albumGuessData)} seconds`,
+            `Got Song In: ${Math.round(songGuessData)} seconds`,
             `Average Points Over ${totalGames} Games: ${Math.round(averageScore)}/100`,
             `https://taydle.codenil.dev`,
         ];
@@ -282,6 +315,9 @@ function submitGuess() {
         document.getElementById("score").style.display = "block";
         updateProgress();
 
+        // Store game state so it persists with refreshes
+        localStorage.setItem("lastGameState", JSON.stringify(messageLines));
+
         // Hide guess button
         document.getElementById("guessButton").style.display = "none";
     } else if (songCorrect && !songGuessData) {
@@ -289,6 +325,16 @@ function submitGuess() {
     } else if (albumCorrect && !albumGuessData) {
         eventsData.push("Album");
     }
+}
+
+function giveUp() {
+    pause();
+    incorrectGuesses += 100;
+    localStorage.setItem("incorrectGuesses", incorrectGuesses);
+    document.getElementById("message").innerHTML = `The song was ${cleanSong(currentSong[2])} from ${
+        currentSong[1].split(" - ")[1]
+    }`;
+    updateProgress();
 }
 
 // Add click event listener to copy the message
@@ -302,3 +348,6 @@ function copyScore() {
         }
     );
 }
+
+// Initialize game on page load
+initializeGame();

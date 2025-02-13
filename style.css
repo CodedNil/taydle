@@ -75,6 +75,9 @@ body {
 #guessButton {
     background-color: #119fbb;
 }
+#surrenderButton {
+    background-color: #b3483c;
+}
 
 input[type="text"] {
     padding: 10px;

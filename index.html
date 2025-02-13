@@ -8,12 +8,8 @@
     </head>
     <body>
         <div class="container">
-            <h1>Today's Song: Click to Play</h1>
-            <h4>
-                Guess the song and album as quickly as possible.<br />Pause when you are ready to guess to save the
-                time, if you are unsure about both song and album, you can guess only one at a time and still get points
-                for partially correct. Then later guess the other half to end.
-            </h4>
+            <h1>Taydle #X: Click To Play</h1>
+            <h4>Guess the song and album as quickly as possible.</h4>
             <div class="progress-container">
                 <div class="progress-text"></div>
                 <div class="progress-bar"></div>
@@ -28,7 +24,10 @@
             <input type="text" id="guessAlbumInput" placeholder="Guess the album..." />
             <div id="suggestions" class="suggest-dropdown"></div>
 
-            <div><button onclick="submitGuess()" id="guessButton" class="button">Guess</button></div>
+            <div>
+                <button onclick="submitGuess()" id="guessButton" class="button">Guess</button
+                ><button onclick="giveUp()" id="surrenderButton" class="button">Give Up</button>
+            </div>
 
             <p id="message"></p>
             <p onclick="copyScore()" id="score"></p>
