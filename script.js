@@ -211,10 +211,20 @@ function addGuessMarker(now, type) {
     document.querySelector(".progress-container").appendChild(marker);
 }
 
+let lastGuess;
 function submitGuess() {
     pause();
     const song_guess = document.getElementById("guessSongInput").value.toLowerCase().trim();
     const album_guess = document.getElementById("guessAlbumInput").value.toLowerCase().trim();
+
+    if (song_guess === "" || album_guess === "") {
+        return;
+    }
+    // Check if the guess is identical to the last guess
+    if (lastGuess && song_guess === lastGuess[0] && album_guess === lastGuess[1]) {
+        return;
+    }
+    lastGuess = [song_guess, album_guess];
 
     // Evaluate guess correctness
     const album = currentSong[1].split(" - ")[1];
