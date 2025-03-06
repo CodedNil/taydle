@@ -44,7 +44,7 @@ function initializeGame() {
 }
 
 function pickSong() {
-    const startDate = new Date("2025-02-14");
+    const startDate = new Date("2025-02-15");
     const today = new Date();
     localStorage.setItem("lastGameDate", todayStr);
 
