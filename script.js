@@ -44,7 +44,7 @@ function initializeGame() {
 }
 
 function pickSong() {
-    const startDate = new Date("2025-02-15");
+    const startDate = new Date("2025-02-14");
     const today = new Date();
     localStorage.setItem("lastGameDate", todayStr);
 
@@ -58,9 +58,11 @@ function pickSong() {
     currentSong = allSongs[index];
 
     // Display song details as part of game setup
-    const [hash, album, song] = currentSong;
+    const [hash, album, song, startTime] = currentSong;
 
     audio = new Audio(`albums/${album}/${song}`);
+    audio.currentTime = startTime;
+    lastTime = startTime;
     audio.addEventListener("timeupdate", function () {
         if (audio.paused || audio.ended) return;
         updateProgress();
@@ -119,7 +121,7 @@ function pause() {
 }
 
 function restartSong() {
-    audio.currentTime = 0;
+    audio.currentTime = currentSong[3];
     updateProgress();
 }
 
@@ -216,8 +218,12 @@ function submitGuess() {
     pause();
     const song_guess = document.getElementById("guessSongInput").value.toLowerCase().trim();
     const album_guess = document.getElementById("guessAlbumInput").value.toLowerCase().trim();
+    const song_guess_valid =
+        song_guess != "" && !song_guess.includes("seconds.") && (!lastGuess || song_guess != lastGuess[0]);
+    const album_guess_valid =
+        album_guess != "" && !album_guess.includes("seconds.") && (!lastGuess || album_guess != lastGuess[1]);
 
-    if (song_guess === "" || album_guess === "") {
+    if (!song_guess_valid && !album_guess_valid) {
         return;
     }
     // Check if the guess is identical to the last guess
@@ -238,6 +244,13 @@ function submitGuess() {
         document.getElementById("guessSongInput").value = `${song} - ${Math.round(totalTime)} seconds.`;
         addGuessMarker(audio.currentTime, "correct"); // Add marker for the guess
         document.getElementById("message").innerHTML = "Correct song, what's the album?";
+
+        // If album guess is wrong
+        if (album_guess_valid && !albumCorrect && !albumGuessData) {
+            console.log("incorrect album");
+            handleIncorrectGuess();
+        }
+
         updateProgress();
     }
     if (albumCorrect && !albumGuessData) {
@@ -246,13 +259,20 @@ function submitGuess() {
         document.getElementById("guessAlbumInput").value = `${album} - ${Math.round(totalTime)} seconds.`;
         addGuessMarker(audio.currentTime, "correct"); // Add marker for the guess
         document.getElementById("message").innerHTML = "Correct album, what's the song?";
+
+        // If album guess is wrong
+        if (song_guess_valid && !songCorrect && !songGuessData) {
+            console.log("incorrect song");
+            handleIncorrectGuess();
+        }
+
         updateProgress();
     }
-    if (!songCorrect && !albumCorrect) {
-        incorrectGuesses++;
-        localStorage.setItem("incorrectGuesses", incorrectGuesses);
-        eventsData.push("Incorrect");
-        addGuessMarker(audio.currentTime, "incorrect"); // Add marker for the guess
+    // If answer is totally wrong
+    if (song_guess_valid && album_guess_valid && !songCorrect && !albumCorrect) {
+        console.log("incorrect fully");
+        incorrectGuesses++; // Extra incorrect so you get two
+        handleIncorrectGuess();
         document.getElementById("message").innerHTML = "Sorry that's not it!";
         updateProgress();
     }
@@ -335,6 +355,13 @@ function submitGuess() {
     } else if (albumCorrect && !albumGuessData) {
         eventsData.push("Album");
     }
+}
+
+function handleIncorrectGuess() {
+    incorrectGuesses++;
+    localStorage.setItem("incorrectGuesses", incorrectGuesses);
+    eventsData.push("Incorrect");
+    addGuessMarker(audio.currentTime, "incorrect");
 }
 
 function giveUp() {

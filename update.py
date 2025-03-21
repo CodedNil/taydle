@@ -1,6 +1,7 @@
 import os
 import json
 import hashlib
+import random
 
 albums_folder = "albums"
 output_file = "index.json"
@@ -15,11 +16,15 @@ for album_folder in sorted(os.listdir(albums_folder)):
         # Iterate through each song file in the album folder
         for song_file in sorted(os.listdir(album_path)):
             if song_file.endswith(".mp3"):
-                songs_list.append(f"{hashlib.sha256(song_file.encode("utf-8")).hexdigest()}|{album_folder}|{song_file}")
+                song_hash = hashlib.sha256(song_file.encode("utf-8")).hexdigest()
+                random_time = random.randint(0, 120)
+                songs_list.append(
+                    f"{song_hash}|{album_folder}|{song_file}|{random_time}"
+                )
 
 # Shuffle the list of songs
 songs_list.sort(
-    key=lambda song: hashlib.sha256(f"{song}|{salt}".encode("utf-8")).hexdigest()
+    key=lambda song: hashlib.sha256(f"{song.rsplit('|', 1)[0]}|{salt}".encode("utf-8")).hexdigest()
 )
 
 # Write the dictionary to a json file
