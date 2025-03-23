@@ -4,7 +4,7 @@ import hashlib
 import random
 
 albums_folder = "albums"
-output_file = "index.json"
+output_file = "data.json"
 salt = "salt0"
 
 songs_list = []
