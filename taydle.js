@@ -33,7 +33,7 @@ function initializeGame() {
     }
 
     // Load songs and pick based on new date if it's a new day
-    fetch("index.json")
+    fetch("data.json")
         .then((response) => response.json())
         .then((data) => {
             allSongs = data.map((entry) => entry.split("|"));
