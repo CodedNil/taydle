@@ -133,6 +133,12 @@ function progressFalloff(now, dur) {
 
 let lastTime = 0;
 function updateProgress() {
+    // Hacky fix
+    if (audio.currentTime < startTime) {
+        audio.currentTime = startTime;
+        lastTime = startTime;
+    }
+
     const now = audio.currentTime;
     const dur = audio.duration;
     document.querySelector(".progress-bar").style.width = `${progressFalloff(now, dur)}%`;
