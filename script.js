@@ -134,6 +134,7 @@ function progressFalloff(now, dur) {
 let lastTime = 0;
 function updateProgress() {
     // Hacky fix
+    const startTime = currentSong[3];
     if (audio.currentTime < startTime) {
         audio.currentTime = startTime;
         lastTime = startTime;
