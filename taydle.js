@@ -61,8 +61,11 @@ function pickSong() {
     const [hash, album, song, startTime] = currentSong;
 
     audio = new Audio(`albums/${album}/${song}`);
-    audio.currentTime = startTime;
-    lastTime = startTime;
+    audio.addEventListener("canplay", function () {
+        audio.currentTime = startTime;
+        lastTime = startTime;
+        updateProgress();
+    });
     audio.addEventListener("timeupdate", function () {
         if (audio.paused || audio.ended) return;
         updateProgress();
@@ -121,7 +124,11 @@ function pause() {
 }
 
 function restartSong() {
-    audio.currentTime = currentSong[3];
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        audio.fastSeek(currentSong[3]);
+    } else {
+        audio.currentTime = startTime;
+    }
     updateProgress();
 }
 
