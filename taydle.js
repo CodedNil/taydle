@@ -1,4 +1,4 @@
-let audio;
+const audio = document.getElementById("audioPlayer");
 let allSongs = [];
 let isPlaying = false;
 let currentSong = null;
@@ -60,19 +60,11 @@ function pickSong() {
     // Display song details as part of game setup
     const [hash, album, song, startTime] = currentSong;
 
-    audio = new Audio(`albums/${album}/${song}`);
-    audio.addEventListener("canplay", function () {
-        audio.currentTime = startTime;
-        lastTime = startTime;
-        updateProgress();
-    });
-    audio.addEventListener("timeupdate", function () {
-        if (audio.paused || audio.ended) return;
-        updateProgress();
-    });
-    audio.addEventListener("durationchange", function () {
-        updateProgress();
-    });
+    audio.src = `albums/${album}/${song}`;
+    audio.currentTime = currentSong[3];
+    lastTime = currentSong[3];
+    audio.load();
+    updateProgress();
 }
 
 function resetData() {
@@ -124,13 +116,17 @@ function pause() {
 }
 
 function restartSong() {
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        audio.fastSeek(currentSong[3]);
-    } else {
-        audio.currentTime = startTime;
-    }
+    audio.currentTime = currentSong[3];
     updateProgress();
 }
+
+audio.addEventListener("timeupdate", function () {
+    if (audio.paused || audio.ended) return;
+    updateProgress();
+});
+audio.addEventListener("durationchange", function () {
+    updateProgress();
+});
 
 // Logarithmic progress bar, to highlight the first seconds more prominently
 function progressFalloff(now, dur) {
@@ -141,11 +137,11 @@ function progressFalloff(now, dur) {
 let lastTime = 0;
 function updateProgress() {
     // Hacky fix
-    const startTime = currentSong[3];
-    if (audio.currentTime < startTime) {
-        audio.currentTime = startTime;
-        lastTime = startTime;
-    }
+    // const startTime = currentSong[3];
+    // if (audio.currentTime < startTime) {
+    //     audio.currentTime = startTime;
+    //     lastTime = startTime;
+    // }
 
     const now = audio.currentTime;
     const dur = audio.duration;
