@@ -252,13 +252,15 @@ function submitGuess() {
     const albumCorrect = album.toLowerCase() === album_guess;
     const songCorrect = song.toLowerCase() === song_guess;
 
+    const incorrectFully = song_guess_valid && album_guess_valid && !songCorrect && !albumCorrect;
+
     // If song guess is wrong
-    if (song_guess_valid && !songCorrect && !todayData.songIn) {
+    if (!incorrectFully && song_guess_valid && !songCorrect && !todayData.songIn) {
         console.log("incorrect song");
         handleIncorrectGuess();
     }
     // If album guess is wrong
-    if (album_guess_valid && !albumCorrect && !todayData.albumIn) {
+    if (!incorrectFully && album_guess_valid && !albumCorrect && !todayData.albumIn) {
         console.log("incorrect album");
         handleIncorrectGuess();
     }
@@ -295,7 +297,7 @@ function submitGuess() {
         todayData.eventsData.push("Complete");
         // Calculate score based on how long it took to guess
         const max_time = 120; // Anything past this is 0 score
-        const buffer_time = 2; // How long to allow score to be max before it starts dropping
+        const buffer_time = 0.5; // How long to allow score to be max before it starts dropping
         const falloff_rate = 0.6; // How fast the score drops off logarithmically, lower is faster falloff
         const albumScore =
             clamp(
