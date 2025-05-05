@@ -72,6 +72,7 @@ function pickSong() {
     audio.src = `albums/${album}/${song}`;
     audio.currentTime = currentSong[3];
     lastTime = currentSong[3];
+    audio.preload = "auto";
     audio.load();
     updateProgress();
 }
@@ -383,11 +384,36 @@ function handleIncorrectGuess() {
 function giveUp() {
     pause();
     todayData.incorrectGuesses += 100;
-    saveToday();
+
+    // Retrieve past scores from localStorage, add new score, then save it
+    const pastScores = JSON.parse(localStorage.getItem("pastScores")) || [];
+    const hash = currentSong[0];
+    pastScores.push(hash + "|" + 0.0);
+    localStorage.setItem("pastScores", JSON.stringify(pastScores));
+
+    // Calculate average score
+    const totalGames = pastScores.length;
+    const averageScore = pastScores.reduce((acc, score) => acc + parseFloat(score.split("|")[1]), 0) / totalGames;
+
+    let messageLines = [
+        `Taydle #${gameNumber} 0 Points (Gave Up)`,
+        `Average Points Over ${totalGames} Games: ${Math.round(averageScore)}/100`,
+        `https://taydle.codenil.dev`,
+    ];
     document.getElementById("message").innerHTML = `The song was ${cleanSong(currentSong[2])} from ${
         currentSong[1].split(" - ")[1]
     }`;
+    document.getElementById("score").innerHTML = "Click To Copy To Clipboard<br><br>" + messageLines.join("<br>");
+    document.getElementById("score").style.display = "block";
     updateProgress();
+
+    // Store game state so it persists with refreshes
+    todayData.gameState = messageLines;
+
+    // Hide guess button
+    document.getElementById("guessButton").style.display = "none";
+
+    saveToday();
 }
 
 // Add click event listener to copy the message
